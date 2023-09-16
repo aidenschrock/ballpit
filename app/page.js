@@ -1,95 +1,73 @@
-import Image from 'next/image'
-import styles from './page.module.css'
+"use client"
+
+import { Canvas, useFrame, useThree } from "@react-three/fiber"
+import { Physics, usePlane, useSphere } from "@react-three/cannon"
+import { EffectComposer, SSAO, Bloom } from "@react-three/postprocessing"
 
 export default function Home() {
+  function InstancedSpheres({ count = 200 }) {
+    const { viewport } = useThree()
+    const [ref] = useSphere((index) => ({ mass: 100, position: [4 - Math.random() * 8, viewport.height, 0, 0], args: [1.2] }))
+    return (
+      <instancedMesh ref={ref} castShadow receiveShadow args={[null, null, count]}>
+        <sphereGeometry args={[1.2, 32, 32]} />
+        <meshLambertMaterial color="#ff7b00" />
+      </instancedMesh>
+    )
+  }
+
+  function Borders() {
+    const { viewport } = useThree()
+    return (
+      <>
+        <Plane position={[0, -viewport.height / 2, 0]} rotation={[-Math.PI / 2, 0, 0]} />
+        <Plane position={[-viewport.width / 2 - 1, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
+        <Plane position={[viewport.width / 2 + 1, 0, 0]} rotation={[0, -Math.PI / 2, 0]} />
+        <Plane position={[0, 0, -1]} rotation={[0, 0, 0]} />
+        <Plane position={[0, 0, 12]} rotation={[0, -Math.PI, 0]} />
+      </>
+    )
+  }
+
+  function Plane({ color, ...props }) {
+    usePlane(() => ({ ...props }))
+    return null
+  }
+
+  function Mouse() {
+    const { viewport } = useThree()
+    const [, api] = useSphere(() => ({ type: "Kinematic", args: [6] }))
+    return useFrame((state) => api.position.set((state.mouse.x * viewport.width) / 2, (state.mouse.y * viewport.height) / 2, 7))
+  }
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>app/page.js</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+    <main className='main'>
+      <Canvas shadows gl={{ stencil: false, antialias: false }} camera={{ position: [0, 0, 20], fov: 50, near: 17, far: 40 }}>
+        <fog attach="fog" args={["red", 25, 35]} />
+        <color attach="background" args={["#feef8a"]} />
+        <ambientLight intensity={1.5} />
+        <directionalLight position={[-10, -10, -5]} intensity={0.5} />
+        <directionalLight
+          castShadow
+          intensity={4}
+          position={[50, 50, 25]}
+          shadow-mapSize={[256, 256]}
+          shadow-camera-left={-10}
+          shadow-camera-right={10}
+          shadow-camera-top={10}
+          shadow-camera-bottom={-10}
         />
-      </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p>Find in-depth information about Next.js features and API.</p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Learn <span>-&gt;</span>
-          </h2>
-          <p>Learn about Next.js in an interactive course with&nbsp;quizzes!</p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
+        <Physics gravity={[0, -50, 0]} defaultContactMaterial={{ restitution: 0.5 }}>
+          <group position={[0, 0, -10]}>
+            <Mouse />
+            <Borders />
+            <InstancedSpheres />
+          </group>
+        </Physics>
+        <EffectComposer>
+          <SSAO radius={0.4} intensity={50} luminanceInfluence={0.4} color="red" />
+        </EffectComposer>
+      </Canvas>
     </main>
   )
 }
