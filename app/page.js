@@ -1,30 +1,45 @@
 "use client";
 
 import { Canvas, useFrame, useThree } from "@react-three/fiber";
-import { Physics, usePlane, useSphere } from "@react-three/cannon";
-import { EffectComposer, SSAO, Bloom } from "@react-three/postprocessing";
-import { useTexture } from "@react-three/drei";
-import texture from "./assets/bright-blue-128.png";
+import { Physics, usePlane, useSphere, Debug } from "@react-three/cannon";
+import { EffectComposer, SSAO } from "@react-three/postprocessing";
+import { OrderedDither } from "./ordered dither/OrderedDither";
+import * as THREE from "three";
+import { useMemo } from "react";
+
+const colors = ["#0a3be7", "#7694ff", "#ffffff"];
+const tempColor = new THREE.Color();
 
 export default function Home() {
-  function InstancedSpheres({ count = 20 }) {
-    const matcap = useTexture(texture.src);
+  function InstancedSpheres({ count = 6 }) {
+    const colorArray = useMemo(
+      () =>
+        Float32Array.from(
+          new Array(3)
+            .fill()
+            .flatMap((_, i) => tempColor.set(colors[i]).toArray())
+        ),
+      []
+    );
+    console.log(colorArray);
+    // multiplies by 3 due to 3vec
+
     const { viewport } = useThree();
     const [ref] = useSphere((index) => ({
-      mass: 100,
+      mass: 50,
       position: [4 - Math.random() * 8, viewport.height, 0, 0],
       args: [2],
     }));
     return (
-      <instancedMesh
-        ref={ref}
-        castShadow
-        receiveShadow
-        args={[null, null, count]}
-      >
-        <sphereGeometry args={[2, 32, 32]} />
-        <meshMatcapMaterial matcap={matcap} />
-        {/* <meshLambertMaterial color="#ff7b00" /> */}
+      <instancedMesh ref={ref} args={[null, null, count]}>
+        <sphereGeometry args={[2, 32, 32]}>
+          <instancedBufferAttribute
+            attach="attributes-color"
+            args={[colorArray, 2]}
+          />
+        </sphereGeometry>
+
+        <meshLambertMaterial vertexColors />
       </instancedMesh>
     );
   }
@@ -39,8 +54,8 @@ export default function Home() {
         />
         <Plane position={[-10, 0, 0]} rotation={[0, Math.PI / 2, 0]} />
         <Plane position={[10, 0, 0]} rotation={[0, -Math.PI / 2, 0]} />
-        <Plane position={[0, 0, -3.5]} rotation={[0, 0, 0]} />
-        <Plane position={[0, 0, 3.5]} rotation={[0, -Math.PI, 0]} />
+        <Plane position={[0, 0, -2]} rotation={[0, 0, 0]} />
+        <Plane position={[0, 0, 2]} rotation={[0, -Math.PI, 0]} />
       </>
     );
   }
@@ -52,7 +67,7 @@ export default function Home() {
 
   function Mouse() {
     const { viewport } = useThree();
-    const [, api] = useSphere(() => ({ type: "Kinematic", args: [8] }));
+    const [, api] = useSphere(() => ({ type: "Kinematic", args: [7] }));
     return useFrame((state) =>
       api.position.set(
         (state.mouse.x * viewport.width) / 2,
@@ -65,40 +80,33 @@ export default function Home() {
   return (
     <main className="main">
       <Canvas
-        shadows
         gl={{ stencil: false, antialias: false }}
         camera={{ position: [0, 0, 20], fov: 50, near: 17, far: 40 }}
       >
-        <fog attach="fog" args={["#b85a95", 25, 35]} />
-        {/* <color attach="background" args={["#feef8a"]} /> */}
-        {/* <ambientLight intensity={1.5} />
-        <directionalLight position={[-10, -10, -5]} intensity={0.5} />
-        <directionalLight
-          castShadow
-          intensity={4}
-          position={[50, 50, 25]}
-          shadow-mapSize={[256, 256]}
-          shadow-camera-left={-10}
-          shadow-camera-right={10}
-          shadow-camera-top={10}
-          shadow-camera-bottom={-10}
-        /> */}
+        <color attach="background" args={["#FFFFFF"]} />
+        <ambientLight color={"#0a3be7"} intensity={4} />
+
+        <directionalLight intensity={4} position={[10, 20, 20]} />
         <Physics
-          gravity={[0, -50, 0]}
-          defaultContactMaterial={{ restitution: 0.3 }}
+          gravity={[0, -20, 0]}
+          // defaultContactMaterial={[(contactEquationRelaxation = 3)]}
         >
           <group position={[0, 0, -10]}>
             <Mouse />
-            <Borders />
+            <Debug>
+              <Borders />
+            </Debug>
+
             <InstancedSpheres />
           </group>
         </Physics>
         <EffectComposer>
+          <OrderedDither invertDither={false} darkThreshold={10} />
           <SSAO
             radius={0.4}
             intensity={50}
             luminanceInfluence={0.4}
-            color="yellow"
+            color="#0a3be7"
           />
         </EffectComposer>
       </Canvas>
