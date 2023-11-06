@@ -7,7 +7,7 @@ import { OrderedDither } from "./ordered dither/OrderedDither";
 import * as THREE from "three";
 import { useMemo } from "react";
 
-const colors = ["#0a3be7", "#7694ff", "#ffffff"];
+const colors = ["#0a3be7", "#7694ff", "#ffffff", "#0a3be7", "#7694ff", "#ffffff"];
 const tempColor = new THREE.Color();
 
 export default function Home() {
@@ -15,19 +15,20 @@ export default function Home() {
     const colorArray = useMemo(
       () =>
         Float32Array.from(
-          new Array(3)
+          new Array(count * 3)
             .fill()
             .flatMap((_, i) => tempColor.set(colors[i]).toArray())
         ),
       []
     );
-    console.log(colorArray);
-    // multiplies by 3 due to 3vec
+
+
 
     const { viewport } = useThree();
+    console.log(viewport.height)
     const [ref] = useSphere((index) => ({
-      mass: 50,
-      position: [4 - Math.random() * 8, viewport.height, 0, 0],
+      mass: 100,
+      position: [5 - Math.random() * 10, viewport.height + (index * .1), 0, 0],
       args: [2],
     }));
     return (
@@ -35,10 +36,9 @@ export default function Home() {
         <sphereGeometry args={[2, 32, 32]}>
           <instancedBufferAttribute
             attach="attributes-color"
-            args={[colorArray, 2]}
+            args={[colorArray, 3]}
           />
         </sphereGeometry>
-
         <meshLambertMaterial vertexColors />
       </instancedMesh>
     );
@@ -67,7 +67,7 @@ export default function Home() {
 
   function Mouse() {
     const { viewport } = useThree();
-    const [, api] = useSphere(() => ({ type: "Kinematic", args: [7] }));
+    const [, api] = useSphere(() => ({ type: "Kinematic", args: [5.5] }));
     return useFrame((state) =>
       api.position.set(
         (state.mouse.x * viewport.width) / 2,
@@ -88,14 +88,14 @@ export default function Home() {
 
         <directionalLight intensity={4} position={[10, 20, 20]} />
         <Physics
-          gravity={[0, -20, 0]}
-          // defaultContactMaterial={[(contactEquationRelaxation = 3)]}
+          gravity={[0, -25, 0]}
+          defaultContactMaterial={{ restitution: 0.1, friction: 0 }}
         >
           <group position={[0, 0, -10]}>
             <Mouse />
-            <Debug>
-              <Borders />
-            </Debug>
+            {/* <Debug> */}
+            <Borders />
+            {/* </Debug> */}
 
             <InstancedSpheres />
           </group>
