@@ -7,11 +7,30 @@ import { OrderedDither } from "./ordered dither/OrderedDither";
 import * as THREE from "three";
 import { useMemo } from "react";
 
-const colors = ["#0a3be7", "#7694ff", "#ffffff", "#0a3be7", "#7694ff", "#ffffff"];
+const colors = [
+  "#0a3be7",
+  "#7694ff",
+  "#ffffff",
+  "#0a3be7",
+  "#7694ff",
+  "#ffffff",
+  "#0a3be7",
+  "#7694ff",
+  "#ffffff",
+  "#0a3be7",
+  "#7694ff",
+  "#ffffff",
+  "#0a3be7",
+  "#7694ff",
+  "#ffffff",
+  "#0a3be7",
+  "#7694ff",
+  "#ffffff",
+];
 const tempColor = new THREE.Color();
 
 export default function Home() {
-  function InstancedSpheres({ count = 6 }) {
+  function InstancedSpheres({ count = 18 }) {
     const colorArray = useMemo(
       () =>
         Float32Array.from(
@@ -22,13 +41,11 @@ export default function Home() {
       []
     );
 
-
-
     const { viewport } = useThree();
-    console.log(viewport.height)
+
     const [ref] = useSphere((index) => ({
       mass: 100,
-      position: [5 - Math.random() * 10, viewport.height + (index * .1), 0, 0],
+      position: [5 - Math.random() * 10, viewport.height + index * 0.1, 0, 0],
       args: [2],
     }));
     return (
@@ -67,7 +84,7 @@ export default function Home() {
 
   function Mouse() {
     const { viewport } = useThree();
-    const [, api] = useSphere(() => ({ type: "Kinematic", args: [5.5] }));
+    const [, api] = useSphere(() => ({ type: "Kinematic", args: [7] }));
     return useFrame((state) =>
       api.position.set(
         (state.mouse.x * viewport.width) / 2,
